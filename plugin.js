@@ -75,6 +75,9 @@ class CspHtmlWebpackPlugin {
     // special NONCE for PrimeReact inline styles
     this.primeReactInlineNonce = this.createNonce();
 
+    // generated CSP hashes grouped by compilation
+    this.realContentHashRecords = new WeakMap();
+
     // valid hashes from https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#Sources
     if (!['sha256', 'sha384', 'sha512'].includes(this.opts.hashingMethod)) {
       throw new Error(
@@ -264,14 +267,153 @@ class CspHtmlWebpackPlugin {
    * @return {string[]}
    */
   getShas($, policyName, selector) {
+    return this.getHashRecords($, policyName, selector).map(
+      ({ quotedHash }) => quotedHash
+    );
+  }
+
+  /**
+   * Calculates CSP hashes and retains enough information to recompute them
+   * after RealContentHashPlugin updates embedded content hashes.
+   * @param {object} $ - the Cheerio instance
+   * @param {string} policyName - one of 'script-src' and 'style-src'
+   * @param {string} selector - a Cheerio selector string for hashable elements
+   * @returns {object[]}
+   */
+  getHashRecords($, policyName, selector) {
     if (this.hashEnabled[policyName] === false) {
       // we don't want to add any nonce for this specific policy
       return [];
     }
 
     return $(selector)
-      .map((i, element) => this.hash($(element).html()))
+      .map((index, element) => {
+        const quotedHash = this.hash($(element).html());
+        return {
+          quotedHash,
+          hash: quotedHash.slice(1, -1),
+          selector,
+          index,
+          hashingMethod: this.opts.hashingMethod,
+        };
+      })
       .get();
+  }
+
+  /**
+   * Records generated CSP hashes that remain embedded in the output HTML.
+   * @param {object} compilation - the webpack compilation
+   * @param {object} htmlPluginData - HtmlRspackPlugin/HtmlWebpackPlugin data
+   * @param {object[]} hashRecords - generated inline element hash records
+   */
+  recordRealContentHashes(compilation, htmlPluginData, hashRecords) {
+    const compilationRecords = this.realContentHashRecords.get(compilation);
+    if (!compilationRecords || !htmlPluginData.outputName) {
+      return;
+    }
+
+    hashRecords
+      .filter((record) => htmlPluginData.html.includes(record.hash))
+      .forEach((record) => {
+        const records = compilationRecords.get(record.hash) || [];
+        records.push({
+          ...record,
+          outputName: htmlPluginData.outputName,
+          xmlMode: get(htmlPluginData, 'plugin.options.xhtml', false),
+        });
+        compilationRecords.set(record.hash, records);
+      });
+  }
+
+  /**
+   * Adds generated CSP hashes to HTML asset metadata so RealContentHashPlugin
+   * includes them in its dependency-aware update pass.
+   * @param {object} compilation - the webpack compilation
+   */
+  registerAssetContentHashes(compilation) {
+    const compilationRecords = this.realContentHashRecords.get(compilation);
+    if (!compilationRecords) {
+      return;
+    }
+
+    const hashesByOutput = new Map();
+    compilationRecords.forEach((records, hash) => {
+      records.forEach(({ outputName }) => {
+        const hashes = hashesByOutput.get(outputName) || new Set();
+        hashes.add(hash);
+        hashesByOutput.set(outputName, hashes);
+      });
+    });
+
+    hashesByOutput.forEach((hashSet, outputName) => {
+      if (!compilation.getAsset(outputName)) return;
+      const hashes = [...hashSet];
+      compilation.updateAsset(
+        outputName,
+        (source) => source,
+        (assetInfo) => {
+          let contenthash = hashes;
+          if (Array.isArray(assetInfo.contenthash)) {
+            contenthash = [...new Set([...assetInfo.contenthash, ...hashes])];
+          } else if (assetInfo.contenthash) {
+            contenthash = [assetInfo.contenthash, ...hashes];
+          }
+          return { ...assetInfo, contenthash };
+        }
+      );
+    });
+  }
+
+  /**
+   * Recomputes a generated CSP hash from HTML after referenced content hashes
+   * have been updated by RealContentHashPlugin.
+   * @param {object} compilation - the webpack compilation
+   * @param {Buffer[]} assets - final asset contents for the old hash
+   * @param {string} oldHash - generated CSP hash before content updates
+   * @returns {string|undefined}
+   */
+  updateCspHash(compilation, assets, oldHash) {
+    const compilationRecords = this.realContentHashRecords.get(compilation);
+    const records = compilationRecords && compilationRecords.get(oldHash);
+    if (!records) {
+      return undefined;
+    }
+
+    const uniqueRecords = [
+      ...new Map(
+        records.map((record) => [
+          `${record.selector}:${record.index}:${record.hashingMethod}:${record.xmlMode}`,
+          record,
+        ])
+      ).values(),
+    ];
+    const candidates = new Set();
+    assets.forEach((asset) => {
+      uniqueRecords.forEach((record) => {
+        const $ = cheerio.load(asset.toString(), {
+          decodeEntities: false,
+          _useHtmlParser2: true,
+          xmlMode: record.xmlMode,
+        });
+        const content = $(record.selector).eq(record.index).html();
+        if (content !== null) {
+          const hash = crypto
+            .createHash(record.hashingMethod)
+            .update(content, 'utf8')
+            .digest('base64');
+          candidates.add(`${record.hashingMethod}-${hash}`);
+        }
+      });
+    });
+
+    if (candidates.size === 1) {
+      return candidates.values().next().value;
+    }
+
+    compilation.errors.push(
+      new Error(`CSP: unable to uniquely update real content hash ${oldHash}`)
+    );
+    return undefined;
   }
 
   /**
@@ -331,8 +473,18 @@ class CspHtmlWebpackPlugin {
     }
 
     // get all shas for script and style tags
-    const scriptShas = this.getShas($, 'script-src', 'script:not([src])');
-    const styleShas = this.getShas($, 'style-src', 'style:not([href])');
+    const scriptHashRecords = this.getHashRecords(
+      $,
+      'script-src',
+      'script:not([src])'
+    );
+    const styleHashRecords = this.getHashRecords(
+      $,
+      'style-src',
+      'style:not([href])'
+    );
+    const scriptShas = scriptHashRecords.map(({ quotedHash }) => quotedHash);
+    const styleShas = styleHashRecords.map(({ quotedHash }) => quotedHash);
 
     const builtPolicy = this.buildPolicy({
       ...this.policy,
@@ -347,6 +499,10 @@ class CspHtmlWebpackPlugin {
     });
 
     this.processFn(builtPolicy, htmlPluginData, $, compilation);
+    this.recordRealContentHashes(compilation, htmlPluginData, [
+      ...scriptHashRecords,
+      ...styleHashRecords,
+    ]);
 
     return compileCb(null, htmlPluginData);
   }
@@ -364,6 +520,29 @@ class CspHtmlWebpackPlugin {
         : require(this.opts.htmlPlugin);
 
     compiler.hooks.compilation.tap('CspHtmlWebpackPlugin', (compilation) => {
+      const RealContentHashPlugin =
+        compiler.webpack.optimize &&
+        compiler.webpack.optimize.RealContentHashPlugin;
+      if (
+        RealContentHashPlugin &&
+        typeof RealContentHashPlugin.getCompilationHooks === 'function'
+      ) {
+        this.realContentHashRecords.set(compilation, new Map());
+        RealContentHashPlugin.getCompilationHooks(compilation).updateHash.tap(
+          'CspHtmlWebpackPlugin',
+          (assets, oldHash) => this.updateCspHash(compilation, assets, oldHash)
+        );
+        compilation.hooks.processAssets.tap(
+          {
+            name: 'CspHtmlWebpackPlugin',
+            stage:
+              compiler.webpack.Compilation
+                .PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE + 1,
+          },
+          () => this.registerAssetContentHashes(compilation)
+        );
+      }
+
       HtmlPlugin.getCompilationHooks(
         compilation
       ).beforeAssetTagGeneration.tapAsync(
