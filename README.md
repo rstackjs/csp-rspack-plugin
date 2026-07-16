@@ -104,6 +104,19 @@ that exist in the default policy:
 
 This configuration should work for most use cases, and will provide a strong layer of extra security.
 
+## Real content hash
+
+When the installed `@rspack/core` exposes
+`RealContentHashPlugin.getCompilationHooks`, generated inline script and style
+hashes are automatically updated after real content hash processing. This keeps
+the CSP policy in sync when an inlined runtime contains asset content hashes
+that Rspack changes later in the compilation.
+
+This integration applies to generated hashes that remain embedded in the HTML.
+If a custom `processFn` writes the policy only to an external file, such as an
+nginx header configuration, that callback is responsible for generating the
+policy from final asset content.
+
 ## All Configuration Options
 
 ### `CspHtmlRspackPlugin`
