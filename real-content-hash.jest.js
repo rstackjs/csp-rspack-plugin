@@ -86,6 +86,31 @@ class InspectionPlugin {
   }
 }
 
+function createAssetsInspectionPlugin(outputNames) {
+  const assets = new Map();
+  return {
+    assets,
+    apply(compiler) {
+      compiler.hooks.compilation.tap(
+        'AssetsInspectionPlugin',
+        (compilation) => {
+          compilation.hooks.processAssets.tap(
+            {
+              name: 'AssetsInspectionPlugin',
+              stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE + 2,
+            },
+            () => {
+              outputNames.forEach((outputName) => {
+                assets.set(outputName, compilation.getAsset(outputName));
+              });
+            }
+          );
+        }
+      );
+    },
+  };
+}
+
 function createInterceptSpyPlugin() {
   let interceptCalls = 0;
   return {
@@ -132,18 +157,25 @@ describe('CSP real content hash integration', () => {
     const newBody = 'loadChunk("async-new-content-hash.js")';
     const oldHash = digest('sha384', oldBody);
     const newHash = digest('sha384', newBody);
+    const userHash = 'sha384-user-provided-policy-hash';
 
     compileWithPlugins(
       [
         new HtmlRspackPlugin({ filename: 'index.html', template: TEMPLATE }),
         interceptSpyPlugin,
-        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+        new CspHtmlRspackPlugin(
+          { 'script-src': ["'self'", `'${userHash}'`] },
+          PLUGIN_OPTIONS
+        ),
         inspectionPlugin,
       ],
-      () => {
-        expect([].concat(inspectionPlugin.info.contenthash || [])).toContain(
-          oldHash
+      (csps) => {
+        const contentHashes = [].concat(
+          inspectionPlugin.info.contenthash || []
         );
+        expect(contentHashes).toContain(oldHash);
+        expect(contentHashes).not.toContain(userHash);
+        expect(csps['index.html']).toContain(`'${userHash}'`);
         expect(hookFacade.getUpdateHash()).toEqual(expect.any(Function));
         expect(
           hookFacade.getUpdateHash()(
@@ -152,6 +184,46 @@ describe('CSP real content hash integration', () => {
           )
         ).toBe(newHash);
         expect(interceptSpyPlugin.interceptCalls).toBe(0);
+        done();
+      }
+    );
+  });
+
+  it('matches shared hashes to their corresponding HTML output', (done) => {
+    hookFacade = installRealContentHashHookFacade();
+    const inspectionPlugin = createAssetsInspectionPlugin([
+      'first.html',
+      'second.html',
+    ]);
+    const oldBody = 'loadChunk("async-old-content-hash.js")';
+    const newBody = 'loadChunk("async-new-content-hash.js")';
+    const oldHash = digest('sha384', oldBody);
+    const newHash = digest('sha384', newBody);
+
+    compileWithPlugins(
+      [
+        new HtmlRspackPlugin({
+          filename: 'first.html',
+          templateContent: `<html><body><script>${oldBody}</script></body></html>`,
+        }),
+        new HtmlRspackPlugin({
+          filename: 'second.html',
+          templateContent: `<html><body><script>unrelated()</script><script>${oldBody}</script></body></html>`,
+        }),
+        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+        inspectionPlugin,
+      ],
+      () => {
+        const finalAssets = ['first.html', 'second.html'].map((outputName) =>
+          Buffer.from(
+            inspectionPlugin.assets
+              .get(outputName)
+              .source.source()
+              .toString()
+              .replace(oldBody, newBody)
+          )
+        );
+        expect(hookFacade.getUpdateHash()(finalAssets, oldHash)).toBe(newHash);
         done();
       }
     );

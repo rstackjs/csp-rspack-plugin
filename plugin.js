@@ -379,17 +379,35 @@ class CspHtmlWebpackPlugin {
       return undefined;
     }
 
-    const uniqueRecords = [
+    const deduplicateRecords = (items) => [
       ...new Map(
-        records.map((record) => [
+        items.map((record) => [
           `${record.selector}:${record.index}:${record.hashingMethod}:${record.xmlMode}`,
           record,
         ])
       ).values(),
     ];
+    const recordsByOutput = new Map();
+    records.forEach((record) => {
+      const outputRecords = recordsByOutput.get(record.outputName) || [];
+      outputRecords.push(record);
+      recordsByOutput.set(record.outputName, outputRecords);
+    });
+    const orderedOutputRecords = [...recordsByOutput.entries()]
+      .sort(([a], [b]) => {
+        if (a < b) return -1;
+        if (a > b) return 1;
+        return 0;
+      })
+      .map(([, outputRecords]) => deduplicateRecords(outputRecords));
+    const fallbackRecords = deduplicateRecords(records);
+    const recordsByAsset =
+      assets.length === orderedOutputRecords.length
+        ? orderedOutputRecords
+        : assets.map(() => fallbackRecords);
     const candidates = new Set();
-    assets.forEach((asset) => {
-      uniqueRecords.forEach((record) => {
+    assets.forEach((asset, assetIndex) => {
+      recordsByAsset[assetIndex].forEach((record) => {
         const $ = cheerio.load(asset.toString(), {
           decodeEntities: false,
           _useHtmlParser2: true,
