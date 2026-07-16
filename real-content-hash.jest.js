@@ -261,12 +261,18 @@ describe('CSP real content hash integration', () => {
   it('skips real content hash hooks and metadata when disabled', (done) => {
     hookFacade = installRealContentHashHookFacade();
     const inspectionPlugin = new InspectionPlugin();
+    const cspPlugin = new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS);
+    const getHashRecords = jest.spyOn(cspPlugin, 'getHashRecords');
+    const recordRealContentHashes = jest.spyOn(
+      cspPlugin,
+      'recordRealContentHashes'
+    );
     const oldHash = digest('sha384', 'loadChunk("async-old-content-hash.js")');
 
     compileWithPlugins(
       [
         new HtmlRspackPlugin({ filename: 'index.html', template: TEMPLATE }),
-        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+        cspPlugin,
         inspectionPlugin,
       ],
       () => {
@@ -274,6 +280,8 @@ describe('CSP real content hash integration', () => {
         expect(
           [].concat(inspectionPlugin.info.contenthash || [])
         ).not.toContain(oldHash);
+        expect(getHashRecords).not.toHaveBeenCalled();
+        expect(recordRealContentHashes).not.toHaveBeenCalled();
         done();
       },
       false

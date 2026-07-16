@@ -267,9 +267,14 @@ class CspHtmlWebpackPlugin {
    * @return {string[]}
    */
   getShas($, policyName, selector) {
-    return this.getHashRecords($, policyName, selector).map(
-      ({ quotedHash }) => quotedHash
-    );
+    if (this.hashEnabled[policyName] === false) {
+      // we don't want to add any nonce for this specific policy
+      return [];
+    }
+
+    return $(selector)
+      .map((i, element) => this.hash($(element).html()))
+      .get();
   }
 
   /**
@@ -521,18 +526,19 @@ class CspHtmlWebpackPlugin {
     }
 
     // get all shas for script and style tags
-    const scriptHashRecords = this.getHashRecords(
-      $,
-      'script-src',
-      'script:not([src])'
-    );
-    const styleHashRecords = this.getHashRecords(
-      $,
-      'style-src',
-      'style:not([href])'
-    );
-    const scriptShas = scriptHashRecords.map(({ quotedHash }) => quotedHash);
-    const styleShas = styleHashRecords.map(({ quotedHash }) => quotedHash);
+    const trackRealContentHashes = this.realContentHashRecords.has(compilation);
+    const scriptHashRecords = trackRealContentHashes
+      ? this.getHashRecords($, 'script-src', 'script:not([src])')
+      : [];
+    const styleHashRecords = trackRealContentHashes
+      ? this.getHashRecords($, 'style-src', 'style:not([href])')
+      : [];
+    const scriptShas = trackRealContentHashes
+      ? scriptHashRecords.map(({ quotedHash }) => quotedHash)
+      : this.getShas($, 'script-src', 'script:not([src])');
+    const styleShas = trackRealContentHashes
+      ? styleHashRecords.map(({ quotedHash }) => quotedHash)
+      : this.getShas($, 'style-src', 'style:not([href])');
 
     const builtPolicy = this.buildPolicy({
       ...this.policy,
@@ -547,10 +553,12 @@ class CspHtmlWebpackPlugin {
     });
 
     this.processFn(builtPolicy, htmlPluginData, $, compilation);
-    this.recordRealContentHashes(compilation, htmlPluginData, [
-      ...scriptHashRecords,
-      ...styleHashRecords,
-    ]);
+    if (trackRealContentHashes) {
+      this.recordRealContentHashes(compilation, htmlPluginData, [
+        ...scriptHashRecords,
+        ...styleHashRecords,
+      ]);
+    }
 
     return compileCb(null, htmlPluginData);
   }
