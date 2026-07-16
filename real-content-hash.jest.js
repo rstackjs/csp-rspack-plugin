@@ -211,6 +211,10 @@ function compileWithPlugins(plugins, callback, realContentHash = true) {
 describe('CSP real content hash integration', () => {
   let hookFacade;
 
+  it('exports the Rspack plugin class name', () => {
+    expect(CspHtmlRspackPlugin.name).toBe('CspHtmlRspackPlugin');
+  });
+
   afterEach(() => {
     if (hookFacade) {
       hookFacade.restore();

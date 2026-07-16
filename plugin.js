@@ -59,14 +59,14 @@ const defaultAdditionalOpts = {
   processFn: defaultProcessFn,
 };
 
-class CspHtmlWebpackPlugin {
+class CspHtmlRspackPlugin {
   /**
    * Setup for our plugin
    * @param {object} policy - the policy object - see defaultPolicy above for the structure
    * @param {object} additionalOpts - additional config options - see defaultAdditionalOpts above for options available
    */
   constructor(policy = {}, additionalOpts = {}) {
-    // the policy passed in from the CspHtmlWebpackPlugin instance
+    // the policy passed in from the CspHtmlRspackPlugin instance
     this.cspPluginPolicy = Object.freeze(policy);
 
     // the additional options that this plugin allows
@@ -87,7 +87,7 @@ class CspHtmlWebpackPlugin {
   }
 
   /**
-   * Builds options based on settings passed into the CspHtmlWebpackPlugin instance, and the HtmlWebpackPlugin instance
+   * Builds options based on settings passed into the CspHtmlRspackPlugin instance, and the HtmlWebpackPlugin instance
    * Policy: combines default, csp instance and html webpack instance policies defined. Latter policy rules always override former
    * HashEnabled: sets whether we should add hashes for inline scripts/styles
    * NonceEnabled: sets whether we should add nonce attrs for external scripts/styles
@@ -97,7 +97,7 @@ class CspHtmlWebpackPlugin {
    */
   mergeOptions(compilation, htmlPluginData, compileCb) {
     // 1. Let's create the policy we want to use for this HtmlWebpackPlugin instance
-    // CspHtmlWebpackPlugin and HtmlWebpackPlugin policies merged
+    // CspHtmlRspackPlugin and HtmlWebpackPlugin policies merged
     const userPolicy = Object.freeze({
       ...this.cspPluginPolicy,
       ...get(htmlPluginData, 'plugin.options.cspPlugin.policy', {}),
@@ -576,7 +576,7 @@ class CspHtmlWebpackPlugin {
         : require(this.opts.htmlPlugin);
     const bundler = compiler.rspack || compiler.webpack;
 
-    compiler.hooks.compilation.tap('CspHtmlWebpackPlugin', (compilation) => {
+    compiler.hooks.compilation.tap('CspHtmlRspackPlugin', (compilation) => {
       const RealContentHashPlugin =
         bundler.optimize && bundler.optimize.RealContentHashPlugin;
       if (
@@ -586,12 +586,12 @@ class CspHtmlWebpackPlugin {
       ) {
         this.realContentHashRecords.set(compilation, new Map());
         RealContentHashPlugin.getCompilationHooks(compilation).updateHash.tap(
-          'CspHtmlWebpackPlugin',
+          'CspHtmlRspackPlugin',
           (assets, oldHash) => this.updateCspHash(compilation, assets, oldHash)
         );
         compilation.hooks.processAssets.tap(
           {
-            name: 'CspHtmlWebpackPlugin',
+            name: 'CspHtmlRspackPlugin',
             stage: bundler.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE + 1,
           },
           () => this.registerAssetContentHashes(compilation)
@@ -601,11 +601,11 @@ class CspHtmlWebpackPlugin {
       HtmlPlugin.getCompilationHooks(
         compilation
       ).beforeAssetTagGeneration.tapAsync(
-        'CspHtmlWebpackPlugin',
+        'CspHtmlRspackPlugin',
         this.mergeOptions.bind(this, compilation)
       );
       HtmlPlugin.getCompilationHooks(compilation).beforeEmit.tapAsync(
-        'CspHtmlWebpackPlugin',
+        'CspHtmlRspackPlugin',
         this.processCsp.bind(this, compilation)
       );
     });
@@ -646,4 +646,4 @@ if (window.trustedTypes && window.trustedTypes.createPolicy) {
   }
 }
 
-module.exports = CspHtmlWebpackPlugin;
+module.exports = CspHtmlRspackPlugin;
