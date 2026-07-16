@@ -67,6 +67,48 @@ function installRealContentHashHookFacade() {
   };
 }
 
+function createRealContentHashPluginFacade() {
+  let updateHash;
+  return {
+    plugin: {
+      getCompilationHooks() {
+        return {
+          updateHash: {
+            tap(_name, callback) {
+              updateHash = callback;
+            },
+          },
+        };
+      },
+    },
+    getUpdateHash: () => updateHash,
+  };
+}
+
+function createBundlerNamespacePlugin(rspackFacade, webpackFacade) {
+  return {
+    apply(compiler) {
+      if (rspackFacade) {
+        const rspackNamespace = Object.create(compiler.rspack);
+        rspackNamespace.optimize = {
+          ...compiler.rspack.optimize,
+          RealContentHashPlugin: rspackFacade.plugin,
+        };
+        Reflect.set(compiler, 'rspack', rspackNamespace);
+      } else {
+        Reflect.set(compiler, 'rspack', undefined);
+      }
+
+      const webpackNamespace = Object.create(compiler.webpack);
+      webpackNamespace.optimize = {
+        ...compiler.webpack.optimize,
+        RealContentHashPlugin: webpackFacade.plugin,
+      };
+      Reflect.set(compiler, 'webpack', webpackNamespace);
+    },
+  };
+}
+
 class InspectionPlugin {
   apply(compiler) {
     compiler.hooks.compilation.tap('InspectionPlugin', (compilation) => {
@@ -157,10 +199,10 @@ function createInterceptSpyPlugin() {
   };
 }
 
-function compileWithPlugins(plugins, callback) {
+function compileWithPlugins(plugins, callback, realContentHash = true) {
   const config = createWebpackConfig(plugins, undefined, 'index.js', {
     optimization: {
-      realContentHash: false,
+      realContentHash,
     },
   });
   webpackCompile(config, callback);
@@ -211,6 +253,62 @@ describe('CSP real content hash integration', () => {
           )
         ).toBe(newHash);
         expect(interceptSpyPlugin.interceptCalls).toBe(0);
+        done();
+      }
+    );
+  });
+
+  it('skips real content hash hooks and metadata when disabled', (done) => {
+    hookFacade = installRealContentHashHookFacade();
+    const inspectionPlugin = new InspectionPlugin();
+    const oldHash = digest('sha384', 'loadChunk("async-old-content-hash.js")');
+
+    compileWithPlugins(
+      [
+        new HtmlRspackPlugin({ filename: 'index.html', template: TEMPLATE }),
+        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+        inspectionPlugin,
+      ],
+      () => {
+        expect(hookFacade.getUpdateHash()).toBeUndefined();
+        expect(
+          [].concat(inspectionPlugin.info.contenthash || [])
+        ).not.toContain(oldHash);
+        done();
+      },
+      false
+    );
+  });
+
+  it('prefers the Rspack namespace for real content hash hooks', (done) => {
+    const rspackFacade = createRealContentHashPluginFacade();
+    const webpackFacade = createRealContentHashPluginFacade();
+
+    compileWithPlugins(
+      [
+        createBundlerNamespacePlugin(rspackFacade, webpackFacade),
+        new HtmlRspackPlugin({ filename: 'index.html', template: TEMPLATE }),
+        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+      ],
+      () => {
+        expect(rspackFacade.getUpdateHash()).toEqual(expect.any(Function));
+        expect(webpackFacade.getUpdateHash()).toBeUndefined();
+        done();
+      }
+    );
+  });
+
+  it('falls back to the webpack namespace for real content hash hooks', (done) => {
+    const webpackFacade = createRealContentHashPluginFacade();
+
+    compileWithPlugins(
+      [
+        createBundlerNamespacePlugin(null, webpackFacade),
+        new HtmlRspackPlugin({ filename: 'index.html', template: TEMPLATE }),
+        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+      ],
+      () => {
+        expect(webpackFacade.getUpdateHash()).toEqual(expect.any(Function));
         done();
       }
     );

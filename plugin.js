@@ -566,12 +566,13 @@ class CspHtmlWebpackPlugin {
       this.opts.htmlPlugin === 'HtmlRspackPlugin'
         ? HtmlRspackPlugin
         : require(this.opts.htmlPlugin);
+    const bundler = compiler.rspack || compiler.webpack;
 
     compiler.hooks.compilation.tap('CspHtmlWebpackPlugin', (compilation) => {
       const RealContentHashPlugin =
-        compiler.webpack.optimize &&
-        compiler.webpack.optimize.RealContentHashPlugin;
+        bundler.optimize && bundler.optimize.RealContentHashPlugin;
       if (
+        compilation.options.optimization.realContentHash &&
         RealContentHashPlugin &&
         typeof RealContentHashPlugin.getCompilationHooks === 'function'
       ) {
@@ -583,9 +584,7 @@ class CspHtmlWebpackPlugin {
         compilation.hooks.processAssets.tap(
           {
             name: 'CspHtmlWebpackPlugin',
-            stage:
-              compiler.webpack.Compilation
-                .PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE + 1,
+            stage: bundler.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE + 1,
           },
           () => this.registerAssetContentHashes(compilation)
         );
