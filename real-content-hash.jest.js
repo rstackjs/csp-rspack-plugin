@@ -111,6 +111,33 @@ function createAssetsInspectionPlugin(outputNames) {
   };
 }
 
+function createHtmlAssetsInspectionPlugin() {
+  const assets = new Map();
+  return {
+    assets,
+    apply(compiler) {
+      compiler.hooks.compilation.tap(
+        'HtmlAssetsInspectionPlugin',
+        (compilation) => {
+          compilation.hooks.processAssets.tap(
+            {
+              name: 'HtmlAssetsInspectionPlugin',
+              stage: Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE_INLINE + 2,
+            },
+            () => {
+              compilation.getAssets().forEach((asset) => {
+                if (asset.name.endsWith('.html')) {
+                  assets.set(asset.name, asset);
+                }
+              });
+            }
+          );
+        }
+      );
+    },
+  };
+}
+
 function createInterceptSpyPlugin() {
   let interceptCalls = 0;
   return {
@@ -224,6 +251,29 @@ describe('CSP real content hash integration', () => {
           )
         );
         expect(hookFacade.getUpdateHash()(finalAssets, oldHash)).toBe(newHash);
+        done();
+      }
+    );
+  });
+
+  it('registers hashes on HTML filenames with contenthash placeholders', (done) => {
+    hookFacade = installRealContentHashHookFacade();
+    const inspectionPlugin = createHtmlAssetsInspectionPlugin();
+    const oldHash = digest('sha384', 'loadChunk("async-old-content-hash.js")');
+
+    compileWithPlugins(
+      [
+        new HtmlRspackPlugin({
+          filename: 'page.[contenthash].html',
+          template: TEMPLATE,
+        }),
+        new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
+        inspectionPlugin,
+      ],
+      () => {
+        const [[outputName, asset]] = inspectionPlugin.assets;
+        expect(outputName).not.toContain('[contenthash]');
+        expect([].concat(asset.info.contenthash || [])).toContain(oldHash);
         done();
       }
     );

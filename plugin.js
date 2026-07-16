@@ -336,32 +336,62 @@ class CspHtmlWebpackPlugin {
       return;
     }
 
-    const hashesByOutput = new Map();
-    compilationRecords.forEach((records, hash) => {
-      records.forEach(({ outputName }) => {
-        const hashes = hashesByOutput.get(outputName) || new Set();
+    const matchedRecords = new Map();
+    compilation.getAssets().forEach(({ name, source: assetSource }) => {
+      const content = assetSource.source().toString();
+      const hashes = new Set();
+      const parsedHtml = new Map();
+      compilationRecords.forEach((records, hash) => {
+        if (!content.includes(hash)) return;
+        const recordsForAsset = records.filter((record) => {
+          const xmlMode = Boolean(record.xmlMode);
+          let $ = parsedHtml.get(xmlMode);
+          if (!$) {
+            $ = cheerio.load(content, {
+              decodeEntities: false,
+              _useHtmlParser2: true,
+              xmlMode,
+            });
+            parsedHtml.set(xmlMode, $);
+          }
+          const inlineContent = $(record.selector).eq(record.index).html();
+          if (inlineContent === null) return false;
+          const inlineHash = crypto
+            .createHash(record.hashingMethod)
+            .update(inlineContent, 'utf8')
+            .digest('base64');
+          return `${record.hashingMethod}-${inlineHash}` === hash;
+        });
+        if (recordsForAsset.length === 0) return;
         hashes.add(hash);
-        hashesByOutput.set(outputName, hashes);
+        const recordsForHash = matchedRecords.get(hash) || [];
+        recordsForHash.push(
+          ...recordsForAsset.map((record) => ({
+            ...record,
+            outputName: name,
+          }))
+        );
+        matchedRecords.set(hash, recordsForHash);
       });
-    });
 
-    hashesByOutput.forEach((hashSet, outputName) => {
-      if (!compilation.getAsset(outputName)) return;
-      const hashes = [...hashSet];
+      if (hashes.size === 0) return;
       compilation.updateAsset(
-        outputName,
-        (source) => source,
+        name,
+        (currentSource) => currentSource,
         (assetInfo) => {
-          let contenthash = hashes;
+          let contenthash = [...hashes];
           if (Array.isArray(assetInfo.contenthash)) {
-            contenthash = [...new Set([...assetInfo.contenthash, ...hashes])];
+            contenthash = [
+              ...new Set([...assetInfo.contenthash, ...contenthash]),
+            ];
           } else if (assetInfo.contenthash) {
-            contenthash = [assetInfo.contenthash, ...hashes];
+            contenthash = [...new Set([assetInfo.contenthash, ...contenthash])];
           }
           return { ...assetInfo, contenthash };
         }
       );
     });
+    this.realContentHashRecords.set(compilation, matchedRecords);
   }
 
   /**
