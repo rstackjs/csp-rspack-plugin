@@ -143,6 +143,57 @@ describe('CspHtmlRspackPlugin', () => {
   });
 
   describe('Adding sha and nonce checksums', () => {
+    it('preserves inline script and style bytes with the default process function', (done) => {
+      const inlineScript =
+        'const marker = "__CSP_HTML_RSPACK_PLUGIN_INLINE_CONTENT__"; const value = "$&"; const read = () => value;';
+      const inlineStyle = '.parent > .child{content:"$&"}';
+      const config = createWebpackConfig(
+        [
+          new HtmlWebpackPlugin({
+            filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
+            templateContent: `<html><head><style>${inlineStyle}</style></head><body><script>${inlineScript}</script></body></html>`,
+          }),
+          new CspHtmlRspackPlugin(
+            {
+              'script-src': ["'self'"],
+              'style-src': ["'self'"],
+            },
+            {
+              ...testOptions,
+              primeReactEnabled: false,
+              nonceEnabled: {
+                'script-src': false,
+                'style-src': false,
+              },
+            }
+          ),
+        ],
+        undefined,
+        'index.js',
+        { optimization: { realContentHash: false } }
+      );
+
+      webpackCompile(config, (csps, _selectors, fileSystem) => {
+        const html = fileSystem
+          .readFileSync(path.join(WEBPACK_OUTPUT_DIR, 'index.html'))
+          .toString();
+        const scriptHash = crypto
+          .createHash('sha384')
+          .update(inlineScript)
+          .digest('base64');
+        const styleHash = crypto
+          .createHash('sha384')
+          .update(inlineStyle)
+          .digest('base64');
+
+        expect(html).toContain(`<script>${inlineScript}</script>`);
+        expect(html).toContain(`<style>${inlineStyle}</style>`);
+        expect(csps['index.html']).toContain(`'sha384-${scriptHash}'`);
+        expect(csps['index.html']).toContain(`'sha384-${styleHash}'`);
+        done();
+      });
+    });
+
     it('inserts the default policy, including sha-256 hashes of other inline scripts and styles found, and nonce hashes of external scripts found', (done) => {
       const config = createWebpackConfig([
         new HtmlWebpackPlugin({

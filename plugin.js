@@ -8,6 +8,48 @@ const get = require('lodash/get');
 const InjectPlugin = require('webpack-inject-plugin').default;
 
 /**
+ * Serializes the document without rewriting the bytes covered by CSP hashes.
+ * @param {object} $ - the Cheerio instance
+ * @param {boolean} xmlMode - whether to serialize as XHTML
+ * @param {string} sourceHtml - HTML before CSP processing
+ * @param {string} builtPolicy - generated CSP policy
+ * @returns {string}
+ */
+const serializePreservingInlineContent = (
+  $,
+  xmlMode,
+  sourceHtml,
+  builtPolicy
+) => {
+  const inlineContents = [];
+  const reservedContent = [sourceHtml, builtPolicy];
+  $('script:not([src]), style:not([href])').each((index, element) => {
+    const content = $(element).html();
+    if (content !== null) {
+      inlineContents.push({ element, content });
+      reservedContent.push(content);
+    }
+  });
+
+  const reserved = reservedContent.join('\0');
+  let placeholderPrefix = '__CSP_HTML_RSPACK_PLUGIN_INLINE_CONTENT__';
+  while (reserved.includes(placeholderPrefix)) {
+    placeholderPrefix += '_';
+  }
+
+  const replacements = inlineContents.map(({ element, content }, index) => {
+    const placeholder = `${placeholderPrefix}${index}__`;
+    $(element).html(placeholder);
+    return { placeholder, content };
+  });
+  let serializedHtml = xmlMode ? $.xml() : $.html();
+  replacements.forEach(({ placeholder, content }) => {
+    serializedHtml = serializedHtml.replace(placeholder, () => content);
+  });
+  return serializedHtml;
+};
+
+/**
  * The default function for adding the CSP to the head of a document
  * Can be overwritten to allow the developer to process the CSP in their own way
  * @param {string} builtPolicy
@@ -29,9 +71,12 @@ const defaultProcessFn = (builtPolicy, htmlPluginData, $) => {
   metaTag.attr('content', builtPolicy);
 
   // eslint-disable-next-line no-param-reassign
-  htmlPluginData.html = get(htmlPluginData, 'plugin.options.xhtml', false)
-    ? $.xml()
-    : $.html();
+  htmlPluginData.html = serializePreservingInlineContent(
+    $,
+    get(htmlPluginData, 'plugin.options.xhtml', false),
+    htmlPluginData.html,
+    builtPolicy
+  );
 };
 
 const defaultPolicy = {

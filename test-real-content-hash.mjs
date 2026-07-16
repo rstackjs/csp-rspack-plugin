@@ -128,8 +128,7 @@ async function main() {
       plugins: [
         new rspack.HtmlRspackPlugin({
           filename: 'index.html',
-          templateContent:
-            '<html><head><meta http-equiv="Content-Security-Policy" content="%%CSP_CONTENT%%"></head><body></body></html>',
+          templateContent: '<html><head></head><body></body></html>',
         }),
         createInlineRuntimeAndStylePlugin(rspack.HtmlRspackPlugin),
         new CspHtmlRspackPlugin(
@@ -150,13 +149,6 @@ async function main() {
             nonceEnabled: {
               'script-src': false,
               'style-src': false,
-            },
-            processFn(builtPolicy, htmlPluginData) {
-              Reflect.set(
-                htmlPluginData,
-                'html',
-                htmlPluginData.html.replace('%%CSP_CONTENT%%', builtPolicy)
-              );
             },
           }
         ),
