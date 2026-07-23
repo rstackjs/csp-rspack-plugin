@@ -2,23 +2,23 @@ import { Compiler as WebpackCompiler } from 'webpack';
 import { AsyncSeriesWaterfallHook } from 'tapable';
 import HtmlWebpackPlugin = require('html-webpack-plugin');
 
-export = CspHtmlWebpackPlugin;
+export = CspHtmlRspackPlugin;
 
-declare class CspHtmlWebpackPlugin {
+declare class CspHtmlRspackPlugin {
     /**
      * Setup for our plugin
      * @param policy - the policy object
      * @param additionalOpts - additional config options
      */
     constructor(
-        policy?: CspHtmlWebpackPlugin.Policy,
-        additionalOpts?: CspHtmlWebpackPlugin.AdditionalOptions
+        policy?: CspHtmlRspackPlugin.Policy,
+        additionalOpts?: CspHtmlRspackPlugin.AdditionalOptions
     );
 
     apply(compiler: WebpackCompiler): void;
 }
 
-declare namespace CspHtmlWebpackPlugin {
+declare namespace CspHtmlRspackPlugin {
     /**
      * A flat object which defines your CSP policy. Values can either be a
      * string or an array of strings.
@@ -115,8 +115,8 @@ declare namespace CspHtmlWebpackPlugin {
 
 declare module 'html-webpack-plugin' {
     interface Options {
-        cspPlugin?: CspHtmlWebpackPlugin.AdditionalOptions & {
-            policy?: CspHtmlWebpackPlugin.Policy | undefined
+        cspPlugin?: CspHtmlRspackPlugin.AdditionalOptions & {
+            policy?: CspHtmlRspackPlugin.Policy | undefined
         } | undefined;
     }
 }

@@ -7,7 +7,7 @@ const {
   createWebpackConfig,
   webpackCompile,
 } = require('./test-utils/webpack-helpers');
-const CspHtmlWebpackPlugin = require('./plugin');
+const CspHtmlRspackPlugin = require('./plugin');
 
 const { RawSource } = sources;
 const HTML_WEBPACK_PLUGIN = require.resolve('html-webpack-plugin');
@@ -28,7 +28,7 @@ const testOptions = {
   },
 };
 
-describe('CspHtmlWebpackPlugin', () => {
+describe('CspHtmlRspackPlugin', () => {
   beforeEach(() => {
     jest
       .spyOn(crypto, 'randomBytes')
@@ -52,7 +52,7 @@ describe('CspHtmlWebpackPlugin', () => {
     it('throws an error if an invalid hashing method is used', () => {
       expect(() => {
         // eslint-disable-next-line no-new
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             htmlPlugin: HTML_WEBPACK_PLUGIN,
@@ -82,7 +82,7 @@ describe('CspHtmlWebpackPlugin', () => {
                 'with-nothing.html'
               ),
             }),
-            new CspHtmlWebpackPlugin(
+            new CspHtmlRspackPlugin(
               {
                 'script-src': [source],
               },
@@ -115,7 +115,7 @@ describe('CspHtmlWebpackPlugin', () => {
                 'with-nothing.html'
               ),
             }),
-            new CspHtmlWebpackPlugin(
+            new CspHtmlRspackPlugin(
               {
                 'script-src': source,
               },
@@ -152,7 +152,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -178,7 +178,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-nothing.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {
             'base-uri': ["'self'", 'https://slack.com'],
             'font-src': ["'self'", "'https://a-slack-edge.com'"],
@@ -215,7 +215,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {
             'script-src': "'self'",
             'style-src': "'self'",
@@ -248,7 +248,7 @@ describe('CspHtmlWebpackPlugin', () => {
               'with-script-and-style.html'
             ),
           }),
-          new CspHtmlWebpackPlugin(
+          new CspHtmlRspackPlugin(
             {
               'script-src': ["'self'", 'https://my.cdn.com'],
               'style-src': ["'self'"],
@@ -301,7 +301,7 @@ describe('CspHtmlWebpackPlugin', () => {
               'with-script-and-style.html'
             ),
           }),
-          new CspHtmlWebpackPlugin(
+          new CspHtmlRspackPlugin(
             {
               'script-src': [
                 "'self'",
@@ -369,7 +369,7 @@ describe('CspHtmlWebpackPlugin', () => {
               },
             },
           }),
-          new CspHtmlWebpackPlugin({}, testOptions),
+          new CspHtmlRspackPlugin({}, testOptions),
         ]);
 
         webpackCompile(config, (csps) => {
@@ -405,7 +405,7 @@ describe('CspHtmlWebpackPlugin', () => {
               },
             },
           }),
-          new CspHtmlWebpackPlugin(
+          new CspHtmlRspackPlugin(
             {
               'base-uri': ["'self'", 'https://slack.com'],
               'font-src': ["'self'"],
@@ -453,7 +453,7 @@ describe('CspHtmlWebpackPlugin', () => {
               'with-nothing.html'
             ),
           }),
-          new CspHtmlWebpackPlugin({}, testOptions),
+          new CspHtmlRspackPlugin({}, testOptions),
         ]);
 
         webpackCompile(config, (csps) => {
@@ -498,7 +498,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             htmlPlugin: HTML_WEBPACK_PLUGIN,
@@ -552,7 +552,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             htmlPlugin: HTML_WEBPACK_PLUGIN,
@@ -612,7 +612,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -662,7 +662,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -699,7 +699,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-no-meta-tag.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             enabled: false,
@@ -728,7 +728,7 @@ describe('CspHtmlWebpackPlugin', () => {
             enabled: false,
           },
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps, selectors) => {
@@ -749,7 +749,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-no-meta-tag.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             htmlPlugin: HTML_WEBPACK_PLUGIN,
@@ -789,7 +789,7 @@ describe('CspHtmlWebpackPlugin', () => {
             enabled: false,
           },
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps, selectors) => {
@@ -814,7 +814,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-no-content-attr.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -840,7 +840,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-no-meta-tag.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -860,7 +860,7 @@ describe('CspHtmlWebpackPlugin', () => {
         new HtmlWebpackPlugin({
           filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -886,7 +886,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps, selectors) => {
@@ -917,7 +917,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             htmlPlugin: HTML_WEBPACK_PLUGIN,
@@ -971,7 +971,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -1013,7 +1013,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-script-and-style.html'
           ),
         }),
-        new CspHtmlWebpackPlugin(
+        new CspHtmlRspackPlugin(
           {},
           {
             htmlPlugin: HTML_WEBPACK_PLUGIN,
@@ -1051,7 +1051,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-escaped-html.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (_, selectors) => {
@@ -1074,7 +1074,7 @@ describe('CspHtmlWebpackPlugin', () => {
             'with-noscript-tags.html'
           ),
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps) => {
@@ -1102,7 +1102,7 @@ describe('CspHtmlWebpackPlugin', () => {
           ),
           xhtml: true,
         }),
-        new CspHtmlWebpackPlugin({}, testOptions),
+        new CspHtmlRspackPlugin({}, testOptions),
       ]);
 
       webpackCompile(config, (csps, selectors, fileSystem) => {

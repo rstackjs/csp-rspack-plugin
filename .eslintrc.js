@@ -9,7 +9,13 @@ module.exports = {
     'prettier/prettier': ['error', { singleQuote: true }],
     'import/no-extraneous-dependencies': [
       'error',
-      { devDependencies: ['test-utils/**/*', '**/*.jest.js'] },
+      {
+        devDependencies: [
+          'test-utils/**/*',
+          '**/*.jest.js',
+          'test-real-content-hash.mjs',
+        ],
+      },
     ],
     'import/no-dynamic-require': 'off',
     'global-require': 'off',
@@ -29,6 +35,13 @@ module.exports = {
         describe: true,
         expect: true,
         it: true,
+      },
+    },
+    {
+      files: ['test-real-content-hash.mjs'],
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
       },
     },
   ],
