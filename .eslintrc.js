@@ -15,7 +15,7 @@ module.exports = {
       {
         devDependencies: [
           'test-utils/**/*',
-          '**/*.jest.js',
+          '**/*.test.mjs',
           'test-real-content-hash.mjs',
         ],
       },
@@ -31,9 +31,15 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['*.spec.js', '*.jest.js', 'webpack-helpers.js'],
+      files: ['*.spec.js', '*.test.mjs', 'webpack-helpers.mjs'],
+      parserOptions: {
+        sourceType: 'module',
+      },
+      rules: {
+        'import/extensions': 'off',
+      },
       globals: {
-        jest: true,
+        rs: true,
         afterAll: true,
         afterEach: true,
         beforeAll: true,
