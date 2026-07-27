@@ -1,18 +1,16 @@
-const path = require('path');
-const MemoryFs = require('memory-fs');
-const cheerio = require('cheerio');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import webpack from '@rspack/core';
+import * as cheerio from 'cheerio';
+import MemoryFs from 'memory-fs';
 
-let webpack;
-
-function setRspack(core) {
-  webpack = core.rspack || core.default;
-}
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Where we want to output our files in the memory filesystem
  * @type {string}
  */
-const WEBPACK_OUTPUT_DIR = path.join(__dirname, 'dist');
+const WEBPACK_OUTPUT_DIR = path.join(currentDirectory, 'dist');
 
 /**
  * Helper function for running a webpack compilation
@@ -89,7 +87,7 @@ function createWebpackConfig(
 ) {
   return {
     mode: 'none',
-    entry: path.join(__dirname, '..', 'test-utils', 'fixtures', entry),
+    entry: path.join(currentDirectory, '..', 'test-utils', 'fixtures', entry),
     output: {
       path: WEBPACK_OUTPUT_DIR,
       publicPath,
@@ -100,9 +98,4 @@ function createWebpackConfig(
   };
 }
 
-module.exports = {
-  WEBPACK_OUTPUT_DIR,
-  webpackCompile,
-  createWebpackConfig,
-  setRspack,
-};
+export { WEBPACK_OUTPUT_DIR, webpackCompile, createWebpackConfig };

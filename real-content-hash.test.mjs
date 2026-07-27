@@ -1,16 +1,19 @@
-const crypto = require('crypto');
-const path = require('path');
-const CspHtmlRspackPlugin = require('./plugin');
-const {
+import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as rspack from '@rspack/core';
+import {
   createWebpackConfig,
-  setRspack,
   webpackCompile,
-} = require('./test-utils/webpack-helpers');
+} from './test-utils/webpack-helpers.mjs';
+import CspHtmlRspackPlugin from './plugin.js';
 
-let Compilation;
-let HtmlRspackPlugin;
-let RawSource;
-let rspack;
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const {
+  Compilation,
+  HtmlRspackPlugin,
+  sources: { RawSource },
+} = rspack;
 
 const PLUGIN_OPTIONS = {
   enabled: true,
@@ -28,7 +31,7 @@ const PLUGIN_OPTIONS = {
 };
 
 const TEMPLATE = path.join(
-  __dirname,
+  currentDirectory,
   'test-utils',
   'fixtures',
   'with-content-hash-script.html'
@@ -224,15 +227,6 @@ function compileWithPlugins(plugins, callback, realContentHash = true) {
 
 describe('CSP real content hash integration', () => {
   let hookFacade;
-
-  beforeAll(async () => {
-    const core = await import('@rspack/core');
-    setRspack(core);
-    rspack = core;
-    Compilation = core.Compilation;
-    HtmlRspackPlugin = core.HtmlRspackPlugin;
-    RawSource = core.sources.RawSource;
-  });
 
   it('exports the Rspack plugin class name', () => {
     expect(CspHtmlRspackPlugin.name).toBe('CspHtmlRspackPlugin');

@@ -1,15 +1,16 @@
-const path = require('path');
-const crypto = require('crypto');
-const {
+import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { HtmlRspackPlugin as HtmlWebpackPlugin, sources } from '@rspack/core';
+import {
   WEBPACK_OUTPUT_DIR,
   createWebpackConfig,
-  setRspack,
   webpackCompile,
-} = require('./test-utils/webpack-helpers');
-const CspHtmlRspackPlugin = require('./plugin');
+} from './test-utils/webpack-helpers.mjs';
+import CspHtmlRspackPlugin from './plugin.js';
 
-let HtmlWebpackPlugin;
-let RawSource;
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const { RawSource } = sources;
 const HTML_WEBPACK_PLUGIN = 'HtmlRspackPlugin';
 
 const testOptions = {
@@ -29,13 +30,6 @@ const testOptions = {
 };
 
 describe('CspHtmlRspackPlugin', () => {
-  beforeAll(async () => {
-    const core = await import('@rspack/core');
-    setRspack(core);
-    HtmlWebpackPlugin = core.HtmlRspackPlugin;
-    RawSource = core.sources.RawSource;
-  });
-
   beforeEach(() => {
     rs.spyOn(crypto, 'randomBytes')
       .mockImplementationOnce(() => 'primereact-nonce')
@@ -84,7 +78,7 @@ describe('CspHtmlRspackPlugin', () => {
               new HtmlWebpackPlugin({
                 filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
                 template: path.join(
-                  __dirname,
+                  currentDirectory,
                   'test-utils',
                   'fixtures',
                   'with-nothing.html'
@@ -119,7 +113,7 @@ describe('CspHtmlRspackPlugin', () => {
               new HtmlWebpackPlugin({
                 filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
                 template: path.join(
-                  __dirname,
+                  currentDirectory,
                   'test-utils',
                   'fixtures',
                   'with-nothing.html'
@@ -211,7 +205,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -239,7 +233,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-nothing.html'
@@ -278,7 +272,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -313,7 +307,7 @@ describe('CspHtmlRspackPlugin', () => {
             new HtmlWebpackPlugin({
               filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
               template: path.join(
-                __dirname,
+                currentDirectory,
                 'test-utils',
                 'fixtures',
                 'with-script-and-style.html'
@@ -368,7 +362,7 @@ describe('CspHtmlRspackPlugin', () => {
             new HtmlWebpackPlugin({
               filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
               template: path.join(
-                __dirname,
+                currentDirectory,
                 'test-utils',
                 'fixtures',
                 'with-script-and-style.html'
@@ -429,7 +423,7 @@ describe('CspHtmlRspackPlugin', () => {
             new HtmlWebpackPlugin({
               filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
               template: path.join(
-                __dirname,
+                currentDirectory,
                 'test-utils',
                 'fixtures',
                 'with-nothing.html'
@@ -468,7 +462,7 @@ describe('CspHtmlRspackPlugin', () => {
             new HtmlWebpackPlugin({
               filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
               template: path.join(
-                __dirname,
+                currentDirectory,
                 'test-utils',
                 'fixtures',
                 'with-nothing.html'
@@ -511,7 +505,7 @@ describe('CspHtmlRspackPlugin', () => {
             new HtmlWebpackPlugin({
               filename: path.join(WEBPACK_OUTPUT_DIR, 'index-csp.html'),
               template: path.join(
-                __dirname,
+                currentDirectory,
                 'test-utils',
                 'fixtures',
                 'with-nothing.html'
@@ -526,7 +520,7 @@ describe('CspHtmlRspackPlugin', () => {
             new HtmlWebpackPlugin({
               filename: path.join(WEBPACK_OUTPUT_DIR, 'index-no-csp.html'),
               template: path.join(
-                __dirname,
+                currentDirectory,
                 'test-utils',
                 'fixtures',
                 'with-nothing.html'
@@ -564,7 +558,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-1.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -573,7 +567,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-2.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -620,7 +614,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-1.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -629,7 +623,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-2.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -676,7 +670,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-no-hashes.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -691,7 +685,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-hashes.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -728,7 +722,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-no-nonce.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -743,7 +737,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-nonce.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -782,7 +776,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-meta-tag.html'
@@ -810,7 +804,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-meta-tag.html'
@@ -836,7 +830,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-meta-tag.html'
@@ -866,7 +860,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-enabled.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-meta-tag.html'
@@ -875,7 +869,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-disabled.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-meta-tag.html'
@@ -905,7 +899,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-content-attr.html'
@@ -933,7 +927,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-no-meta-tag.html'
@@ -983,7 +977,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -1016,7 +1010,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -1060,7 +1054,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-1.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -1072,7 +1066,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-2.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -1116,7 +1110,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index-1.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-script-and-style.html'
@@ -1156,7 +1150,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-escaped-html.html'
@@ -1181,7 +1175,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-noscript-tags.html'
@@ -1211,7 +1205,7 @@ describe('CspHtmlRspackPlugin', () => {
           new HtmlWebpackPlugin({
             filename: path.join(WEBPACK_OUTPUT_DIR, 'index.html'),
             template: path.join(
-              __dirname,
+              currentDirectory,
               'test-utils',
               'fixtures',
               'with-xhtml.html'

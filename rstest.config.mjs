@@ -2,7 +2,7 @@ import { defineConfig } from '@rstest/core';
 
 export default defineConfig({
   name: 'CspHtmlRspackPlugin',
-  include: ['**/*.test.js'],
+  include: ['**/*.test.mjs'],
   exclude: ['**/node_modules/**'],
   clearMocks: true,
   globals: true,
