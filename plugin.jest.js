@@ -1,15 +1,15 @@
 const path = require('path');
 const crypto = require('crypto');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { sources } = require('@rspack/core');
 const {
   WEBPACK_OUTPUT_DIR,
   createWebpackConfig,
+  setRspack,
   webpackCompile,
 } = require('./test-utils/webpack-helpers');
 const CspHtmlRspackPlugin = require('./plugin');
 
-const { RawSource } = sources;
+let RawSource;
 const HTML_WEBPACK_PLUGIN = require.resolve('html-webpack-plugin');
 
 const testOptions = {
@@ -29,6 +29,12 @@ const testOptions = {
 };
 
 describe('CspHtmlRspackPlugin', () => {
+  beforeAll(async () => {
+    const core = await import('@rspack/core');
+    setRspack(core);
+    RawSource = core.sources.RawSource;
+  });
+
   beforeEach(() => {
     jest
       .spyOn(crypto, 'randomBytes')
