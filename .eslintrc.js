@@ -5,6 +5,9 @@ module.exports = {
     es6: true,
     node: true,
   },
+  parserOptions: {
+    ecmaVersion: 2022,
+  },
   rules: {
     'prettier/prettier': ['error', { singleQuote: true }],
     'import/no-extraneous-dependencies': [
@@ -22,6 +25,9 @@ module.exports = {
   },
   globals: {
     document: true,
+  },
+  settings: {
+    'import/core-modules': ['@rspack/core'],
   },
   overrides: [
     {

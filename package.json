@@ -7,10 +7,10 @@
   "scripts": {
     "eslint": "eslint .",
     "eslint:fix": "eslint . --fix",
-    "jest": "jest --config=./jest.config.js",
+    "jest": "NODE_OPTIONS=--experimental-vm-modules jest --config=./jest.config.js",
     "test:real-content-hash": "node ./test-real-content-hash.mjs",
-    "jest:watch": "jest --watch --verbose=false --config=./jest.config.js",
-    "jest:coverage:generate": "jest --coverage --config=./jest.config.js",
+    "jest:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch --verbose=false --config=./jest.config.js",
+    "jest:coverage:generate": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --config=./jest.config.js",
     "jest:coverage:clean": "rimraf  ./coverage",
     "jest:coverage:upload": "npx codecov",
     "jest:coverage": "npm run jest:coverage:clean && npm run jest:coverage:generate && npm run jest:coverage:upload",
@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@continuous-auth/client": "2.3.2",
-    "babel-jest": "^29.0.1",
+    "babel-jest": "^30.4.1",
     "codecov": "^3.8.1",
     "css-loader": "^6.5.1",
     "eslint": "^8.5.0",
@@ -63,7 +63,7 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^4.0.0",
     "html-webpack-plugin": "^5.0.0-alpha.15",
-    "jest": "^29.0.1",
+    "jest": "^30.4.2",
     "memory-fs": "^0.5.0",
     "mini-css-extract-plugin": "^2.4.5",
     "prettier": "^2.2.1",
@@ -73,5 +73,15 @@
     "fs-extra": "11.3.0",
     "semver": "7.7.1"
   },
-  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
+  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39",
+  "pnpm": {
+    "overrides": {
+      "@rspack/core": "npm:@rspack-canary/core@latest"
+    },
+    "peerDependencyRules": {
+      "allowAny": [
+        "@rspack/*"
+      ]
+    }
+  }
 }

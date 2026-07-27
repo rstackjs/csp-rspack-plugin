@@ -1,17 +1,16 @@
 const crypto = require('crypto');
 const path = require('path');
-const rspack = require('@rspack/core');
 const CspHtmlRspackPlugin = require('./plugin');
 const {
   createWebpackConfig,
+  setRspack,
   webpackCompile,
 } = require('./test-utils/webpack-helpers');
 
-const {
-  Compilation,
-  HtmlRspackPlugin,
-  sources: { RawSource },
-} = rspack;
+let Compilation;
+let HtmlRspackPlugin;
+let RawSource;
+let rspack;
 
 const PLUGIN_OPTIONS = {
   enabled: true,
@@ -105,6 +104,21 @@ function createBundlerNamespacePlugin(rspackFacade, webpackFacade) {
         RealContentHashPlugin: webpackFacade.plugin,
       };
       Reflect.set(compiler, 'webpack', webpackNamespace);
+    },
+  };
+}
+
+function createUnavailableRealContentHashPlugin() {
+  return {
+    apply(compiler) {
+      ['rspack', 'webpack'].forEach((namespace) => {
+        const bundlerNamespace = Object.create(compiler[namespace]);
+        bundlerNamespace.optimize = {
+          ...compiler[namespace].optimize,
+          RealContentHashPlugin: undefined,
+        };
+        Reflect.set(compiler, namespace, bundlerNamespace);
+      });
     },
   };
 }
@@ -210,6 +224,15 @@ function compileWithPlugins(plugins, callback, realContentHash = true) {
 
 describe('CSP real content hash integration', () => {
   let hookFacade;
+
+  beforeAll(async () => {
+    const core = await import('@rspack/core');
+    setRspack(core);
+    rspack = core;
+    Compilation = core.Compilation;
+    HtmlRspackPlugin = core.HtmlRspackPlugin;
+    RawSource = core.sources.RawSource;
+  });
 
   it('exports the Rspack plugin class name', () => {
     expect(CspHtmlRspackPlugin.name).toBe('CspHtmlRspackPlugin');
@@ -396,6 +419,7 @@ describe('CSP real content hash integration', () => {
     compileWithPlugins(
       [
         new HtmlRspackPlugin({ filename: 'index.html', template: TEMPLATE }),
+        createUnavailableRealContentHashPlugin(),
         new CspHtmlRspackPlugin({}, PLUGIN_OPTIONS),
         inspectionPlugin,
       ],

@@ -1,7 +1,12 @@
 const path = require('path');
-const webpack = require('@rspack/core');
 const MemoryFs = require('memory-fs');
 const cheerio = require('cheerio');
+
+let webpack;
+
+function setRspack(core) {
+  webpack = core.rspack || core.default;
+}
 
 /**
  * Where we want to output our files in the memory filesystem
@@ -99,4 +104,5 @@ module.exports = {
   WEBPACK_OUTPUT_DIR,
   webpackCompile,
   createWebpackConfig,
+  setRspack,
 };
