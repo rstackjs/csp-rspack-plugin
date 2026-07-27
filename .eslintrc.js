@@ -31,9 +31,9 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['*.spec.js', '*.jest.js', 'webpack-helpers.js'],
+      files: ['*.spec.js', '*.test.js', 'webpack-helpers.js'],
       globals: {
-        jest: true,
+        rs: true,
         afterAll: true,
         afterEach: true,
         beforeAll: true,
